@@ -345,7 +345,7 @@ class AnswerGrid extends StatelessWidget {
 }
 
 /// low latency sound engine
-final _soundPool = Soundpool.fromOptions();
+final _soundPool = Soundpool.fromOptions(options: const SoundpoolOptions(streamType: StreamType.notification));
 final _soundToId = <Sound, int>{};
 
 enum Sound {
