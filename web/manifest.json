@@ -1,11 +1,11 @@
 {
-    "name": "math_trainer",
-    "short_name": "math_trainer",
+    "name": "Math Miner",
+    "short_name": "MathMiner",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A math trainer game",
+    "description": "A minecoin math trainer game",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

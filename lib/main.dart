@@ -42,7 +42,6 @@ enum Relation {
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  Sound.init();
   runApp(const MathMinerApp());
 }
 
@@ -82,6 +81,7 @@ class _MathMinerState extends State<MathMiner> {
   @override
   initState() {
     super.initState();
+    Sound.init();
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
         _coins = prefs.getInt("coins") ?? 0;
