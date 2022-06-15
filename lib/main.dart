@@ -8,7 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
 
 final mineCoinImage = Image.asset('assets/image/minecoin.webp');
+final happyImage = Image.asset('assets/image/happy.webp');
+final sadImage = Image.asset('assets/image/sad.webp');
 const kDefaultTextStyle = TextStyle(fontWeight: FontWeight.normal, fontFamily: 'Roboto', decoration: TextDecoration.none);
+const kBlockSize = 100.0;
 
 enum Operation {
   add("+"),
@@ -70,7 +73,9 @@ class _MathMinerState extends State<MathMiner> {
   int _solution = 2;
   int _1st = 1;
   int _2nd = 1;
-  bool solved = false;
+  // bool showSolution = false;
+  bool showFailure = false;
+  bool showSuccess = false;
   Operation op = Operation.add;
   Relation rel = Relation.eq;
 
@@ -86,7 +91,8 @@ class _MathMinerState extends State<MathMiner> {
 
   _generatePuzzle() {
     setState(() {
-      solved = false;
+      showFailure = false;
+      showSuccess = false;
       var r = Random();
       // addition
       rel = Relation.eq;
@@ -113,7 +119,7 @@ class _MathMinerState extends State<MathMiner> {
   _success() {
     Sound.success.play();
     setState(() {
-      solved = true;
+      showSuccess = true;
       _coins += _reward;
       SharedPreferences.getInstance().then((prefs) {
         prefs.setInt("coins", _coins);
@@ -129,7 +135,14 @@ class _MathMinerState extends State<MathMiner> {
 
   _failure() {
     Sound.failure.play();
-    _generatePuzzle();
+    setState(() {
+      showFailure = true;
+    });
+    Timer(const Duration(seconds: 2), () {
+      setState(() {
+        _generatePuzzle();
+      });
+    });
   }
 
   _cashOut() {
@@ -154,7 +167,11 @@ class _MathMinerState extends State<MathMiner> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             Container(
-              color: Colors.blue.shade100,
+              color: showFailure
+                  ? Colors.red.shade100
+                  : showSuccess
+                      ? Colors.green.shade100
+                      : Colors.blue.shade100,
               padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -163,14 +180,16 @@ class _MathMinerState extends State<MathMiner> {
                   Block(operation: op),
                   Block(number: _2nd),
                   Block(relation: rel),
-                  solved
+                  showSuccess
                       ? Block(number: _solution)
-                      : SolutionBlock(_solution, reward: _reward, onSuccess: _success, onFailure: _failure),
+                      : showFailure
+                          ? const Block(showFailure: true)
+                          : SolutionBlock(_solution, reward: _reward, onSuccess: _success, onFailure: _failure),
                 ],
               ),
             ),
             Container(),
-            const AnswerGrid(),
+            AnswerGrid(),
           ],
         ),
       ),
@@ -210,18 +229,30 @@ class Block extends StatelessWidget {
   ];
 
   final int? number;
+  final int? reward;
   final Operation? operation;
   final Relation? relation;
   final bool hidden;
-  const Block({super.key, this.number, this.operation, this.relation, this.hidden = false});
+  final bool showFailure;
+  final bool showSuccess;
+  const Block({
+    super.key,
+    this.number,
+    this.operation,
+    this.relation,
+    this.hidden = false,
+    this.reward,
+    this.showFailure = false,
+    this.showSuccess = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     var backgroundColor = number != null ? colorMap[number! % 10] : Colors.grey.shade300;
     var foregroundColor = backgroundColor.computeLuminance() > 0.1 ? Colors.black : Colors.white;
     return SizedBox(
-      width: 100,
-      height: 100,
+      width: kBlockSize,
+      height: kBlockSize,
       child: Container(
         decoration: BoxDecoration(
           color: backgroundColor,
@@ -229,21 +260,37 @@ class Block extends StatelessWidget {
           borderRadius: const BorderRadius.all(Radius.circular(16)),
         ),
         child: Center(
-            child: Text(
-          number != null
-              ? "$number"
-              : operation != null
-                  ? operation!.opChar
-                  : relation != null
-                      ? relation!.relChar
-                      : "",
-          style: kDefaultTextStyle.copyWith(color: foregroundColor, fontSize: 72),
-        )),
+            child: showFailure
+                ? Padding(padding: const EdgeInsets.all(8.0), child: sadImage) // failure display
+                : reward != null
+                    ? Padding(
+                        // reward display
+                        padding: const EdgeInsets.all(2.0),
+                        child: Wrap(
+                          spacing: 2,
+                          alignment: WrapAlignment.center,
+                          runSpacing: 2,
+                          runAlignment: WrapAlignment.spaceEvenly,
+                          children: List.filled(reward!, SizedBox.square(dimension: 28, child: mineCoinImage)),
+                        ))
+                    : Text(
+                        // content display (number or operation or relation)
+                        number != null
+                            ? "$number"
+                            : operation != null
+                                ? operation!.opChar
+                                : relation != null
+                                    ? relation!.relChar
+                                    : "",
+                        style: kDefaultTextStyle.copyWith(color: foregroundColor, fontSize: 72),
+                      )),
       ),
     );
   }
 }
 
+/// A block that can accept an other block dropped on it and shows the possible rewards
+/// for a successful guess.
 class SolutionBlock extends StatelessWidget {
   final int solution;
   final int reward;
@@ -261,22 +308,7 @@ class SolutionBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return DragTarget<int>(
       builder: (BuildContext context, List<dynamic> accepted, List<dynamic> rejected) {
-        return Stack(children: [
-          const Block(),
-          Positioned.fill(
-            top: 4,
-            bottom: 4,
-            left: 4,
-            right: 4,
-            child: Wrap(
-              spacing: 2,
-              alignment: WrapAlignment.center,
-              runSpacing: 2,
-              runAlignment: WrapAlignment.spaceEvenly,
-              children: List.filled(reward, SizedBox.square(dimension: 28, child: mineCoinImage)),
-            ),
-          )
-        ]);
+        return Block(reward: reward);
       },
       onAccept: (int data) {
         if (data == solution) {
@@ -290,23 +322,23 @@ class SolutionBlock extends StatelessWidget {
 }
 
 class AnswerGrid extends StatelessWidget {
-  const AnswerGrid({super.key});
+  static const kSpacing = 20.0;
+
+  AnswerGrid({super.key});
+
+  final answerBlocks = List.generate(30, (index) {
+    final value = index + 1;
+    final tile = Block(number: value);
+    return Draggable<int>(data: value, feedback: tile, childWhenDragging: tile, child: tile);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
-        ),
-        itemCount: 30,
-        itemBuilder: (context, index) {
-          final value = index + 1;
-          final tile = Block(number: value);
-          return Center(
-            child: Draggable<int>(data: value, feedback: tile, childWhenDragging: tile, child: tile),
-          );
-        },
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: SizedBox(
+        width: kBlockSize * 5 + kSpacing * 4,
+        child: Wrap(spacing: kSpacing, runSpacing: kSpacing, children: answerBlocks),
       ),
     );
   }
