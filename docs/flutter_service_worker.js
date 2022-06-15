@@ -24,9 +24,9 @@ const RESOURCES = {
 "manifest.json": "84e3e14f545f0b6d5c5e735e8d3b001d",
 "version.json": "c2b7eb608535295f195ba49ff0ec2aa3",
 "CNAME": "3c712281e92700003dedd5f2bd8a683c",
-"index.html": "74a75b5098cec578b644cf98534334f5",
-"/": "74a75b5098cec578b644cf98534334f5",
-"main.dart.js": "41ba3a945163f405e17349bc51401d39",
+"index.html": "41339e55a1df4160ab7a9b6eed1aea26",
+"/": "41339e55a1df4160ab7a9b6eed1aea26",
+"main.dart.js": "0434cee942ecc1b417e6a7dc8743cc8a",
 "favicon.png": "1ededcf15a4340e8b39049add69e35f0"
 };
 
