@@ -81,7 +81,6 @@ class _MathMinerState extends State<MathMiner> {
   @override
   initState() {
     super.initState();
-    Sound.init();
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
         _coins = prefs.getInt("coins") ?? 0;
