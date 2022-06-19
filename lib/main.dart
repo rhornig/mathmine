@@ -7,11 +7,17 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
 
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const MathMinerApp());
+}
+
 final mineCoinImage = Image.asset('assets/image/minecoin.webp');
 final happyImage = Image.asset('assets/image/happy.webp');
 final sadImage = Image.asset('assets/image/sad.webp');
 const kDefaultTextStyle = TextStyle(fontWeight: FontWeight.normal, fontFamily: 'Roboto', decoration: TextDecoration.none);
 const kBlockSize = 100.0;
+const kMaxSolution = 20;
 
 enum Operation {
   add("+"),
@@ -38,11 +44,6 @@ enum Relation {
 
   @override
   String toString() => relChar;
-}
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MathMinerApp());
 }
 
 class MathMinerApp extends StatelessWidget {
@@ -81,6 +82,7 @@ class _MathMinerState extends State<MathMiner> {
   @override
   initState() {
     super.initState();
+    _generatePuzzle();
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
         _coins = prefs.getInt("coins") ?? 0;
@@ -88,29 +90,86 @@ class _MathMinerState extends State<MathMiner> {
     });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: CoinCounter(coins: _coins, onLongPress: _cashOut)),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[_buildPuzzleGrid(), AnswerGrid()],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPuzzleGrid() {
+    return Container(
+      color: showFailure
+          ? Colors.red.shade100
+          : showSuccess
+              ? Colors.green.shade100
+              : Colors.blue.shade100,
+      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          Block(number: _1st),
+          Block(operation: op),
+          Block(number: _2nd),
+          Block(relation: rel),
+          showSuccess
+              ? Block(number: _solution)
+              : showFailure
+                  ? const Block(showFailure: true)
+                  : SolutionBlock(_solution, reward: _reward, onSuccess: _success, onFailure: _failure),
+        ],
+      ),
+    );
+  }
+
+  final r = Random(DateTime.now().millisecondsSinceEpoch);
+
   _generatePuzzle() {
     setState(() {
       showFailure = false;
       showSuccess = false;
-      var r = Random();
-      // addition
-      rel = Relation.eq;
-      op = Operation.add;
-      _solution = 1 + r.nextInt(30);
-      _1st = r.nextInt(_solution);
-      _2nd = _solution - _1st;
+      if (r.nextInt(100) < 50) {
+        // addition
+        rel = Relation.eq;
+        op = Operation.add;
+        _solution = 1 + r.nextInt(kMaxSolution);
+        _1st = r.nextInt(_solution);
+        _2nd = _solution - _1st;
 
-      // reward calculation
-      if (_1st == 0 || _1st == 1 || _2nd == 0 || _2nd == 1) {
-        _reward = 1;
-      } else if (_1st < 10 && _2nd < 10 && _solution >= 10) {
-        _reward = 3;
-      } else if ((_1st < 20 && _2nd < 20) && _solution >= 20) {
-        _reward = 3;
-      } else if (_solution >= 10) {
-        _reward = 2;
+        // reward calculation
+        if (_1st == 0 || _1st == 1 || _2nd == 0 || _2nd == 1) {
+          _reward = 1;
+        } else if (_1st < 10 && _2nd < 10 && _solution >= 11) {
+          _reward = 4;
+        } else if ((_1st < 20 && _2nd < 20) && _solution >= 20) {
+          _reward = 5;
+        } else if (_solution >= 10) {
+          _reward = 2;
+        } else {
+          _reward = 1;
+        }
       } else {
-        _reward = 1;
+        // subtraction
+        rel = Relation.eq;
+        op = Operation.sub;
+        _solution = r.nextInt(kMaxSolution);
+        _1st = _solution + r.nextInt(kMaxSolution - _solution);
+        _2nd = _1st - _solution;
+
+        // reward calculation
+        if (_1st == 0 || _1st == 1 || _2nd == 0 || _2nd == 1) {
+          _reward = 1;
+        } else if (_solution < 10 && _1st > 10) {
+          _reward = 6;
+        } else {
+          _reward = 4;
+        }
       }
     });
   }
@@ -154,45 +213,6 @@ class _MathMinerState extends State<MathMiner> {
         });
       });
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      // floatingActionButton: FloatingActionButton(onPressed: _generatePuzzle),
-      appBar: AppBar(title: CoinCounter(coins: _coins, onLongPress: _cashOut)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Container(
-              color: showFailure
-                  ? Colors.red.shade100
-                  : showSuccess
-                      ? Colors.green.shade100
-                      : Colors.blue.shade100,
-              padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Block(number: _1st),
-                  Block(operation: op),
-                  Block(number: _2nd),
-                  Block(relation: rel),
-                  showSuccess
-                      ? Block(number: _solution)
-                      : showFailure
-                          ? const Block(showFailure: true)
-                          : SolutionBlock(_solution, reward: _reward, onSuccess: _success, onFailure: _failure),
-                ],
-              ),
-            ),
-            Container(),
-            AnswerGrid(),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -325,7 +345,7 @@ class AnswerGrid extends StatelessWidget {
 
   AnswerGrid({super.key});
 
-  final answerBlocks = List.generate(30, (index) {
+  final answerBlocks = List.generate(kMaxSolution, (index) {
     final value = index + 1;
     final tile = Block(number: value);
     return Draggable<int>(data: value, feedback: tile, childWhenDragging: tile, child: tile);
