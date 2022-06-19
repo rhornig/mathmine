@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
 
@@ -16,7 +17,8 @@ final mineCoinImage = Image.asset('assets/image/minecoin.webp');
 final happyImage = Image.asset('assets/image/happy.webp');
 final sadImage = Image.asset('assets/image/sad.webp');
 const kDefaultTextStyle = TextStyle(fontWeight: FontWeight.normal, fontFamily: 'Roboto', decoration: TextDecoration.none);
-const kBlockSize = 100.0;
+const kBlockSize = 100.0; // the size of a number block
+const kGridSize = 40.0; // the size of a single grid in on the helper area
 const kMaxSolution = 20;
 
 enum Operation {
@@ -97,7 +99,18 @@ class _MathMinerState extends State<MathMiner> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[_buildPuzzleGrid(), AnswerGrid()],
+          children: <Widget>[
+            _buildPuzzleGrid(),
+            AnswerGrid(),
+            HelperBackground(
+              children: [
+                HelperBar(size: _1st % 10),
+                HelperBar(size: _2nd % 10),
+                if (_1st >= 10) const HelperBar(size: 10),
+                if (_2nd >= 10) const HelperBar(size: 10),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -233,20 +246,20 @@ class CoinCounter extends StatelessWidget {
   }
 }
 
-class Block extends StatelessWidget {
-  static final colorMap = [
-    Colors.orange.shade500,
-    Colors.grey.shade50,
-    Colors.red.shade200,
-    Colors.blue.shade300,
-    Colors.red.shade500,
-    Colors.yellow.shade400,
-    Colors.purple.shade600,
-    Colors.grey.shade900,
-    Colors.brown.shade600,
-    Colors.blue.shade800,
-  ];
+final colorMap = [
+  Colors.orange.shade500,
+  Colors.grey.shade50,
+  Colors.red.shade200,
+  Colors.blue.shade300,
+  Colors.red.shade500,
+  Colors.yellow.shade400,
+  Colors.purple.shade600,
+  Colors.grey.shade900,
+  Colors.brown.shade600,
+  Colors.blue.shade800,
+];
 
+class Block extends StatelessWidget {
   final int? number;
   final int? reward;
   final Operation? operation;
@@ -358,6 +371,135 @@ class AnswerGrid extends StatelessWidget {
       child: SizedBox(
         width: kBlockSize * 5 + kSpacing * 4,
         child: Wrap(spacing: kSpacing, runSpacing: kSpacing, children: answerBlocks),
+      ),
+    );
+  }
+}
+
+class HelperBackgroundPainter extends CustomPainter {
+  final thick = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = Colors.black
+    ..strokeWidth = 3;
+
+  final normal = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = Colors.black26
+    ..strokeWidth = 3;
+
+  final thin = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = Colors.black12
+    ..strokeWidth = 1;
+
+  final filled = Paint()
+    ..style = PaintingStyle.fill
+    ..color = Colors.black12;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (int x = 0; x <= size.width / (kGridSize * 5); x++) {
+      canvas.drawLine(Offset(x * kGridSize * 5, 0), Offset(x * kGridSize * 5, size.height), normal);
+    }
+
+    for (int x = 0; x <= size.width / (kGridSize * 10); x++) {
+      canvas.drawLine(Offset(x * kGridSize * 10, 0), Offset(x * kGridSize * 10, size.height), thick);
+    }
+
+    for (int x = 0; x <= size.width / kGridSize; x++) {
+      canvas.drawLine(Offset(x * kGridSize, 0), Offset(x * kGridSize, size.height), thin);
+    }
+
+    for (int y = 0; y <= size.height / kGridSize; y++) {
+      canvas.drawLine(Offset(0, y * kGridSize), Offset(size.width, y * kGridSize), thick);
+    }
+
+    for (int y = 0; y <= size.height / kGridSize - 1; y++) {
+      for (int x = 0; x <= size.width / kGridSize - 1; x++) {
+        canvas.drawCircle(Offset((x + 0.5) * kGridSize, (y + 0.5) * kGridSize), 5, filled);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class HelperBackground extends StatelessWidget {
+  final List<Widget> children;
+  const HelperBackground({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    var background = CustomPaint(
+      painter: HelperBackgroundPainter(),
+      child: SizedBox(
+        width: 800,
+        height: 200,
+        child: Stack(children: children),
+      ),
+    );
+    return DragTarget<_HelperBarState>(
+      builder: (BuildContext context, List<dynamic> accepted, List<dynamic> rejected) {
+        return background;
+      },
+      onAcceptWithDetails: (details) {
+        // change the position of the bar at the end of dragging to the new position
+        RenderBox rBox = context.findRenderObject() as RenderBox;
+        var localOffset = rBox.globalToLocal(details.offset);
+        details.data.updatePosition(localOffset);
+      },
+    );
+  }
+}
+
+class HelperBar extends StatefulWidget {
+  final int size;
+  const HelperBar({super.key, required this.size});
+
+  @override
+  State<HelperBar> createState() => _HelperBarState();
+}
+
+class _HelperBarState extends State<HelperBar> {
+  Offset _position = Offset.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    var r = Random();
+    _position = Offset(r.nextDouble() * 400, r.nextDouble() * 150);
+  }
+
+  void updatePosition(Offset position) {
+    setState(() {
+      _position = position;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var bar = SizedBox(
+      width: widget.size * kGridSize,
+      height: kGridSize,
+      child: ClipRect(
+        child: CustomPaint(
+          foregroundPainter: HelperBackgroundPainter(),
+          child: Container(
+            color: colorMap[widget.size % 10],
+          ),
+        ),
+      ),
+    );
+
+    return Positioned(
+      left: _position.dx,
+      top: _position.dy,
+      child: Draggable<_HelperBarState>(
+        data: this,
+        feedback: bar,
+        childWhenDragging: Container(),
+        child: bar,
       ),
     );
   }
