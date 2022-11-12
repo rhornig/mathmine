@@ -17,9 +17,8 @@ final mineCoinImage = Image.asset('assets/image/minecoin.webp');
 final happyImage = Image.asset('assets/image/happy.webp');
 final sadImage = Image.asset('assets/image/sad.webp');
 const kDefaultTextStyle = TextStyle(fontWeight: FontWeight.normal, fontFamily: 'Roboto', decoration: TextDecoration.none);
-const kBlockSize = 100.0; // the size of a number block
 const kGridSize = 40.0; // the size of a single grid in on the helper area
-const kMaxSolution = 20;
+const kNoOfSolutions = 100;
 
 enum Operation {
   add("+"),
@@ -102,6 +101,7 @@ class _MathMinerState extends State<MathMiner> {
           children: <Widget>[
             _buildPuzzleGrid(),
             AnswerGrid(),
+            /*
             HelperBackground(
               children: [
                 HelperBar(size: _1st % 10),
@@ -110,6 +110,7 @@ class _MathMinerState extends State<MathMiner> {
                 if (_2nd >= 10) const HelperBar(size: 10),
               ],
             ),
+            */
           ],
         ),
       ),
@@ -147,32 +148,30 @@ class _MathMinerState extends State<MathMiner> {
     setState(() {
       showFailure = false;
       showSuccess = false;
-      if (r.nextInt(100) < 50) {
+      if (r.nextDouble() < 1.0) {
         // addition
         rel = Relation.eq;
         op = Operation.add;
-        _solution = 1 + r.nextInt(kMaxSolution);
-        _1st = r.nextInt(_solution);
+        _solution = r.nextInt(kNoOfSolutions); // from 0 .. 99
+        _1st =
+            (_solution < 90 && r.nextDouble() < 0.25) ? r.nextInt(9) + 1 : r.nextInt(_solution); // 25% chance of a single digit
         _2nd = _solution - _1st;
 
         // reward calculation
-        if (_1st == 0 || _1st == 1 || _2nd == 0 || _2nd == 1) {
-          _reward = 1;
-        } else if (_1st < 10 && _2nd < 10 && _solution >= 11) {
-          _reward = 4;
-        } else if ((_1st < 20 && _2nd < 20) && _solution >= 20) {
-          _reward = 5;
-        } else if (_solution >= 10) {
-          _reward = 2;
-        } else {
-          _reward = 1;
-        }
+        _reward = 1;
+        if (_1st >= 10) _reward++;
+        if (_1st >= 20) _reward++;
+        if (_1st % 10 != 0 && _1st >= 10) _reward++;
+        if (_2nd >= 10) _reward++;
+        if (_2nd >= 20) _reward++;
+        if (_2nd % 10 != 0 && _2nd >= 10) _reward++;
+        if (_1st % 10 + _2nd % 10 >= 10) _reward += 5; // more rewards for carrying
       } else {
         // subtraction
         rel = Relation.eq;
         op = Operation.sub;
-        _solution = r.nextInt(kMaxSolution - 1) + 1;
-        _1st = _solution + r.nextInt(kMaxSolution - _solution - 1) + 1;
+        _solution = r.nextInt(kNoOfSolutions - 1) + 1;
+        _1st = _solution + r.nextInt(kNoOfSolutions - _solution - 1) + 1;
         _2nd = _1st - _solution;
 
         // reward calculation
@@ -262,6 +261,7 @@ final colorMap = [
 class Block extends StatelessWidget {
   final int? number;
   final int? reward;
+  final double size;
   final Operation? operation;
   final Relation? relation;
   final bool hidden;
@@ -269,6 +269,7 @@ class Block extends StatelessWidget {
   final bool showSuccess;
   const Block({
     super.key,
+    this.size = 70,
     this.number,
     this.operation,
     this.relation,
@@ -283,8 +284,8 @@ class Block extends StatelessWidget {
     var backgroundColor = number != null ? colorMap[number! % 10] : Colors.grey.shade300;
     var foregroundColor = backgroundColor.computeLuminance() > 0.1 ? Colors.black : Colors.white;
     return SizedBox(
-      width: kBlockSize,
-      height: kBlockSize,
+      width: size,
+      height: size,
       child: Container(
         decoration: BoxDecoration(
           color: backgroundColor,
@@ -297,13 +298,13 @@ class Block extends StatelessWidget {
                 : reward != null
                     ? Padding(
                         // reward display
-                        padding: const EdgeInsets.all(2.0),
+                        padding: const EdgeInsets.all(0),
                         child: Wrap(
-                          spacing: 2,
+                          spacing: 1,
                           alignment: WrapAlignment.center,
-                          runSpacing: 2,
+                          runSpacing: 1,
                           runAlignment: WrapAlignment.spaceEvenly,
-                          children: List.filled(reward!, SizedBox.square(dimension: 28, child: mineCoinImage)),
+                          children: List.filled(reward!, SizedBox.square(dimension: 14, child: mineCoinImage)),
                         ))
                     : Text(
                         // content display (number or operation or relation)
@@ -314,7 +315,7 @@ class Block extends StatelessWidget {
                                 : relation != null
                                     ? relation!.relChar
                                     : "",
-                        style: kDefaultTextStyle.copyWith(color: foregroundColor, fontSize: 72),
+                        style: kDefaultTextStyle.copyWith(color: foregroundColor, fontSize: size * 0.75),
                       )),
       ),
     );
@@ -354,13 +355,14 @@ class SolutionBlock extends StatelessWidget {
 }
 
 class AnswerGrid extends StatelessWidget {
-  static const kSpacing = 20.0;
+  static const kSpacing = 10.0;
+  static const kBlockSize = 60.0;
 
   AnswerGrid({super.key});
 
-  final answerBlocks = List.generate(kMaxSolution, (index) {
-    final value = index + 1;
-    final tile = Block(number: value);
+  final answerBlocks = List.generate(kNoOfSolutions, (index) {
+    final value = index;
+    final tile = Block(number: value, size: kBlockSize);
     return Draggable<int>(data: value, feedback: tile, childWhenDragging: tile, child: tile);
   });
 
@@ -369,7 +371,7 @@ class AnswerGrid extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: SizedBox(
-        width: kBlockSize * 5 + kSpacing * 4,
+        width: kBlockSize * 10 + kSpacing * 9,
         child: Wrap(spacing: kSpacing, runSpacing: kSpacing, children: answerBlocks),
       ),
     );
