@@ -171,8 +171,8 @@ class _MathMinerState extends State<MathMiner> {
         // subtraction
         rel = Relation.eq;
         op = Operation.sub;
-        _solution = r.nextInt(kMaxSolution);
-        _1st = _solution + r.nextInt(kMaxSolution - _solution);
+        _solution = r.nextInt(kMaxSolution - 1) + 1;
+        _1st = _solution + r.nextInt(kMaxSolution - _solution - 1) + 1;
         _2nd = _1st - _solution;
 
         // reward calculation
