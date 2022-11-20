@@ -20,33 +20,6 @@ const kDefaultTextStyle = TextStyle(fontWeight: FontWeight.normal, fontFamily: '
 const kGridSize = 40.0; // the size of a single grid in on the helper area
 const kNoOfSolutions = 100;
 
-enum Operation {
-  add("+"),
-  sub("-"),
-  mul("*"),
-  div("/");
-
-  final String opChar;
-  const Operation(this.opChar);
-
-  @override
-  String toString() => opChar;
-}
-
-enum Relation {
-  eq("="),
-  less("<"),
-  more(">"),
-  lessOrEq("<="),
-  moreOrEq(">=");
-
-  final String relChar;
-  const Relation(this.relChar);
-
-  @override
-  String toString() => relChar;
-}
-
 class MathMinerApp extends StatelessWidget {
   const MathMinerApp({Key? key}) : super(key: key);
 
@@ -69,21 +42,20 @@ class MathMiner extends StatefulWidget {
 }
 
 class _MathMinerState extends State<MathMiner> {
-  int _coins = 0;
-  int _reward = 1;
-  int _solution = 2;
-  int _1st = 1;
-  int _2nd = 1;
   // bool showSolution = false;
   bool showFailure = false;
   bool showSuccess = false;
-  Operation op = Operation.add;
-  Relation rel = Relation.eq;
+
+  int _coins = 0;
+  int _reward = 1;
+
+  PuzzleConfig puzzleConfig = PuzzleConfig(DigitSet.all, DigitSet.all, DigitSet.all, DigitSet.all);
+  Puzzle puzzle = Puzzle(1, Operation.add, 1, Relation.eq, 2);
 
   @override
   initState() {
     super.initState();
-    _generatePuzzle();
+    _showNewPuzzle();
     SharedPreferences.getInstance().then((prefs) {
       setState(() {
         _coins = prefs.getInt("coins") ?? 0;
@@ -128,61 +100,27 @@ class _MathMinerState extends State<MathMiner> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          Block(number: _1st),
-          Block(operation: op),
-          Block(number: _2nd),
-          Block(relation: rel),
+          Block(number: puzzle.first),
+          Block(operation: puzzle.operation),
+          Block(number: puzzle.second),
+          Block(relation: puzzle.relation),
           showSuccess
-              ? Block(number: _solution)
+              ? Block(number: puzzle.third)
               : showFailure
                   ? const Block(showFailure: true)
-                  : SolutionBlock(_solution, reward: _reward, onSuccess: _success, onFailure: _failure),
+                  : SolutionBlock(puzzle.third, reward: _reward, onSuccess: _success, onFailure: _failure),
         ],
       ),
     );
   }
 
-  final r = Random(DateTime.now().millisecondsSinceEpoch);
-
-  _generatePuzzle() {
+  _showNewPuzzle() {
     setState(() {
       showFailure = false;
       showSuccess = false;
-      if (r.nextDouble() < 1.0) {
-        // addition
-        rel = Relation.eq;
-        op = Operation.add;
-        _solution = r.nextInt(kNoOfSolutions); // from 0 .. 99
-        _1st =
-            (_solution < 90 && r.nextDouble() < 0.25) ? r.nextInt(9) + 1 : r.nextInt(_solution); // 25% chance of a single digit
-        _2nd = _solution - _1st;
 
-        // reward calculation
-        _reward = 1;
-        if (_1st >= 10) _reward++;
-        if (_1st >= 20) _reward++;
-        if (_1st % 10 != 0 && _1st >= 10) _reward++;
-        if (_2nd >= 10) _reward++;
-        if (_2nd >= 20) _reward++;
-        if (_2nd % 10 != 0 && _2nd >= 10) _reward++;
-        if (_1st % 10 + _2nd % 10 >= 10) _reward += 5; // more rewards for carrying
-      } else {
-        // subtraction
-        rel = Relation.eq;
-        op = Operation.sub;
-        _solution = r.nextInt(kNoOfSolutions - 1) + 1;
-        _1st = _solution + r.nextInt(kNoOfSolutions - _solution - 1) + 1;
-        _2nd = _1st - _solution;
-
-        // reward calculation
-        if (_1st == 0 || _1st == 1 || _2nd == 0 || _2nd == 1) {
-          _reward = 1;
-        } else if (_solution < 10 && _1st > 10) {
-          _reward = 6;
-        } else {
-          _reward = 4;
-        }
-      }
+      puzzle = generatePuzzle(puzzleConfig);
+      _reward = calculateReward(puzzle);
     });
   }
 
@@ -198,7 +136,7 @@ class _MathMinerState extends State<MathMiner> {
 
     Timer(const Duration(seconds: 2), () {
       setState(() {
-        _generatePuzzle();
+        _showNewPuzzle();
       });
     });
   }
@@ -210,7 +148,7 @@ class _MathMinerState extends State<MathMiner> {
     });
     Timer(const Duration(seconds: 2), () {
       setState(() {
-        _generatePuzzle();
+        _showNewPuzzle();
       });
     });
   }
@@ -531,4 +469,176 @@ enum Sound {
       _soundToId[s] = await _soundPool.load(await rootBundle.load("assets/sound/${s.filename}"));
     }
   }
+}
+
+enum DigitSet {
+  digit_0({0}, "0"),
+  digit_1({1}, "1"),
+  digit_2({2}, "2"),
+  digit_3({3}, "3"),
+  digit_4({4}, "4"),
+  digit_5({5}, "5"),
+  digit_6({6}, "6"),
+  digit_7({7}, "7"),
+  digit_8({8}, "8"),
+  digit_9({9}, "9"),
+
+  non_0({1, 2, 3, 4, 5, 6, 7, 8, 9}, "nem nulla"),
+  div_by_5({0, 5}, "osztható 5-el"),
+  lt_5({0, 1, 2, 3, 4}, "< 5"),
+  mt_5({5, 6, 7, 8, 9}, ">= 5"),
+  even({0, 2, 4, 6, 8}, "páros"),
+  odd({1, 3, 5, 7, 9}, "páratlan"),
+  all({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, "minden");
+
+  final Set<int> digits;
+  final String label;
+  const DigitSet(this.digits, this.label);
+}
+
+/// Draw a digit randomly from a set of digits with uniform distribution taking into account the min, max value
+/// With an empty set after the min,max filtering, it will return -1
+/// If the set contains a single element, it returns that element
+int drawDigit(DigitSet digitSet, {int min = 0, int max = 9}) {
+  if (max < min) max = min;
+  var s = Set<int>.of(digitSet.digits)..retainWhere((d) => d >= min && d <= max);
+  if (s.isEmpty) return -1;
+  if (s.length == 1) return s.first;
+  return s.elementAt(Random().nextInt(s.length));
+}
+
+/// Draws a two digit number from two sets of digits
+/// The first digit is drawn from the first set, the second digit is drawn from the second set
+/// Allows specification of a minimum and maximum value. If the constraints cannot be met, -1 is returned
+int drawTwoDigitNumber(DigitSet firstDigits, DigitSet secondDigits, {int min = 0, int max = 99}) {
+  final int min_first = min ~/ 10;
+  final int max_first = max ~/ 10;
+  final int min_second = min % 10;
+  final int max_second = max % 10;
+  final int first = drawDigit(firstDigits, min: min_first, max: max_first);
+  if (first == -1) return -1;
+
+  final int second = drawDigit(
+    secondDigits,
+    min: first == min_first ? min_second : 0,
+    max: first == max_first ? max_second : 9,
+  );
+  if (second == -1) return -1;
+
+  return first * 10 + second;
+}
+
+enum Operation {
+  add("+"),
+  sub("-");
+
+  final String opChar;
+  const Operation(this.opChar);
+
+  @override
+  String toString() => opChar;
+}
+
+enum Relation {
+  eq("="),
+  less("<"),
+  greater(">"),
+  lessOrEq("<="),
+  greaterOrEq(">=");
+
+  final String relChar;
+  const Relation(this.relChar);
+
+  @override
+  String toString() => relChar;
+}
+
+class Puzzle {
+  final int first;
+  final Operation operation;
+  final int second;
+  final Relation relation;
+  final int third;
+
+  Puzzle(this.first, this.operation, this.second, this.relation, this.third);
+
+  @override
+  String toString() {
+    return "$first $operation $second $relation $third";
+  }
+}
+
+class PuzzleConfig {
+  final DigitSet msd1;
+  final DigitSet lsd1;
+  final DigitSet msd2;
+  final DigitSet lsd2;
+
+  PuzzleConfig(this.msd1, this.lsd1, this.msd2, this.lsd2);
+
+  @override
+  String toString() {
+    return "[${msd1.label}, ${lsd1.label}] [${msd2.label}, ${lsd2.label}]";
+  }
+}
+
+final r = Random(DateTime.now().millisecondsSinceEpoch);
+
+Puzzle generatePuzzle(PuzzleConfig pc) {
+  var op = Operation.add;
+  var rel = Relation.eq;
+  int first = 0, second = 0, third = 0;
+
+  if (r.nextDouble() < 1.0) {
+    // addition
+    rel = Relation.eq;
+    op = Operation.add;
+    for (int i = 0; i < 10; ++i) {
+      // try at least 10 times if the constraints cannot be met (digit set vs max/min)
+      first = drawTwoDigitNumber(pc.msd1, pc.lsd1);
+      if (first == -1) continue;
+
+      second = drawTwoDigitNumber(pc.msd2, pc.lsd2, max: 99 - first);
+      if (second == -1) continue;
+
+      break;
+    }
+    third = first + second;
+  } else {
+    // subtraction
+    rel = Relation.eq;
+    op = Operation.sub;
+    for (int i = 0; i < 10; ++i) {
+      // try at least 10 times if the constraints cannot be met (digit set vs max/min)
+      first = drawTwoDigitNumber(pc.msd1, pc.lsd1);
+      if (first == -1) continue;
+
+      second = drawTwoDigitNumber(pc.msd2, pc.lsd2, max: first);
+      if (second == -1) continue;
+
+      break;
+    }
+    third = first - second;
+  }
+
+  return Puzzle(first, op, second, rel, third);
+}
+
+int calculateReward(Puzzle puzzle) {
+  int reward = 1;
+  if (puzzle.first >= 10) reward++;
+  if (puzzle.first >= 20) reward++;
+  if (puzzle.first % 10 != 0 && puzzle.first >= 10) reward++;
+  if (puzzle.second >= 10) reward++;
+  if (puzzle.second >= 20) reward++;
+  if (puzzle.second % 10 != 0 && puzzle.second >= 10) reward++;
+  switch (puzzle.operation) {
+    case Operation.add:
+      if (puzzle.first % 10 + puzzle.second % 10 >= 10) reward += 5; // more rewards for carrying over
+      break;
+    case Operation.sub:
+      if (puzzle.first % 10 - puzzle.second % 10 < 0) reward += 5; // more rewards for carrying over
+      break;
+  }
+  return reward;
 }
