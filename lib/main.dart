@@ -4,9 +4,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:soundpool/soundpool.dart';
+
+import 'settings.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,28 +30,30 @@ class MathMinerApp extends StatelessWidget {
     return MaterialApp(
       title: 'MathMine',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const MathMiner(),
+      home: const MathMinerWidget(),
     );
   }
 }
 
-class MathMiner extends StatefulWidget {
-  const MathMiner({Key? key}) : super(key: key);
+class MathMinerWidget extends StatefulWidget {
+  const MathMinerWidget({Key? key}) : super(key: key);
 
   @override
-  State<MathMiner> createState() => _MathMinerState();
+  State<MathMinerWidget> createState() => _MathMinerWidgetState();
 }
 
-class _MathMinerState extends State<MathMiner> {
+class _MathMinerWidgetState extends State<MathMinerWidget> {
   // bool showSolution = false;
   bool showFailure = false;
   bool showSuccess = false;
+  bool showSettings = false;
 
   int _coins = 0;
   int _reward = 1;
 
-  PuzzleConfig puzzleConfig = PuzzleConfig(DigitSet.all, DigitSet.all, DigitSet.all, DigitSet.all);
-  Puzzle puzzle = Puzzle(1, Operation.add, 1, Relation.eq, 2);
+  final PuzzleConfig _puzzleConfig =
+      PuzzleConfig(DigitSpec.all, DigitSpec.all, Operation.add, DigitSpec.all, DigitSpec.all, Relation.eq);
+  Puzzle _puzzle = Puzzle(1, Operation.add, 1, Relation.eq, 2);
 
   @override
   initState() {
@@ -66,14 +69,27 @@ class _MathMinerState extends State<MathMiner> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: CoinCounter(coins: _coins, onLongPress: _cashOut)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            _buildPuzzleGrid(),
-            AnswerGrid(),
-            /*
+      appBar: AppBar(
+        title: CoinCounterWidget(coins: _coins, onLongPress: _cashOut),
+        actions: [
+          IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                setState(() {
+                  showSettings = !showSettings;
+                });
+              })
+        ],
+      ),
+      body: showSettings
+          ? SettingsWidget(_puzzleConfig)
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  _buildPuzzleGrid(),
+                  AnswerGridWidget(),
+                  /*
             HelperBackground(
               children: [
                 HelperBar(size: _1st % 10),
@@ -83,9 +99,9 @@ class _MathMinerState extends State<MathMiner> {
               ],
             ),
             */
-          ],
-        ),
-      ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -100,15 +116,15 @@ class _MathMinerState extends State<MathMiner> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          Block(number: puzzle.first),
-          Block(operation: puzzle.operation),
-          Block(number: puzzle.second),
-          Block(relation: puzzle.relation),
+          Block(number: _puzzle.first),
+          Block(operation: _puzzle.operation),
+          Block(number: _puzzle.second),
+          Block(relation: _puzzle.relation),
           showSuccess
-              ? Block(number: puzzle.third)
+              ? Block(number: _puzzle.third)
               : showFailure
                   ? const Block(showFailure: true)
-                  : SolutionBlock(puzzle.third, reward: _reward, onSuccess: _success, onFailure: _failure),
+                  : SolutionBlockWidget(_puzzle.third, reward: _reward, onSuccess: _success, onFailure: _failure),
         ],
       ),
     );
@@ -119,8 +135,8 @@ class _MathMinerState extends State<MathMiner> {
       showFailure = false;
       showSuccess = false;
 
-      puzzle = generatePuzzle(puzzleConfig);
-      _reward = calculateReward(puzzle);
+      _puzzle = generatePuzzle(_puzzleConfig);
+      _reward = calculateReward(_puzzle);
     });
   }
 
@@ -166,10 +182,10 @@ class _MathMinerState extends State<MathMiner> {
   }
 }
 
-class CoinCounter extends StatelessWidget {
+class CoinCounterWidget extends StatelessWidget {
   final VoidCallback onLongPress;
   final int coins;
-  const CoinCounter({super.key, required this.coins, required this.onLongPress});
+  const CoinCounterWidget({super.key, required this.coins, required this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -262,12 +278,12 @@ class Block extends StatelessWidget {
 
 /// A block that can accept an other block dropped on it and shows the possible rewards
 /// for a successful guess.
-class SolutionBlock extends StatelessWidget {
+class SolutionBlockWidget extends StatelessWidget {
   final int solution;
   final int reward;
   final VoidCallback onSuccess;
   final VoidCallback onFailure;
-  const SolutionBlock(
+  const SolutionBlockWidget(
     this.solution, {
     required this.reward,
     required this.onSuccess,
@@ -292,11 +308,11 @@ class SolutionBlock extends StatelessWidget {
   }
 }
 
-class AnswerGrid extends StatelessWidget {
+class AnswerGridWidget extends StatelessWidget {
   static const kSpacing = 10.0;
   static const kBlockSize = 60.0;
 
-  AnswerGrid({super.key});
+  AnswerGridWidget({super.key});
 
   final answerBlocks = List.generate(kNoOfSolutions, (index) {
     final value = index;
@@ -365,9 +381,9 @@ class HelperBackgroundPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class HelperBackground extends StatelessWidget {
+class HelperBackgroundWidget extends StatelessWidget {
   final List<Widget> children;
-  const HelperBackground({super.key, required this.children});
+  const HelperBackgroundWidget({super.key, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -379,7 +395,7 @@ class HelperBackground extends StatelessWidget {
         child: Stack(children: children),
       ),
     );
-    return DragTarget<_HelperBarState>(
+    return DragTarget<_HelperBarWidgetState>(
       builder: (BuildContext context, List<dynamic> accepted, List<dynamic> rejected) {
         return background;
       },
@@ -393,15 +409,15 @@ class HelperBackground extends StatelessWidget {
   }
 }
 
-class HelperBar extends StatefulWidget {
+class HelperBarWidget extends StatefulWidget {
   final int size;
-  const HelperBar({super.key, required this.size});
+  const HelperBarWidget({super.key, required this.size});
 
   @override
-  State<HelperBar> createState() => _HelperBarState();
+  State<HelperBarWidget> createState() => _HelperBarWidgetState();
 }
 
-class _HelperBarState extends State<HelperBar> {
+class _HelperBarWidgetState extends State<HelperBarWidget> {
   Offset _position = Offset.zero;
 
   @override
@@ -435,7 +451,7 @@ class _HelperBarState extends State<HelperBar> {
     return Positioned(
       left: _position.dx,
       top: _position.dy,
-      child: Draggable<_HelperBarState>(
+      child: Draggable<_HelperBarWidgetState>(
         data: this,
         feedback: bar,
         childWhenDragging: Container(),
@@ -471,7 +487,7 @@ enum Sound {
   }
 }
 
-enum DigitSet {
+enum DigitSpec {
   digit_0({0}, "0"),
   digit_1({1}, "1"),
   digit_2({2}, "2"),
@@ -493,13 +509,13 @@ enum DigitSet {
 
   final Set<int> digits;
   final String label;
-  const DigitSet(this.digits, this.label);
+  const DigitSpec(this.digits, this.label);
 }
 
 /// Draw a digit randomly from a set of digits with uniform distribution taking into account the min, max value
 /// With an empty set after the min,max filtering, it will return -1
 /// If the set contains a single element, it returns that element
-int drawDigit(DigitSet digitSet, {int min = 0, int max = 9}) {
+int drawDigit(DigitSpec digitSet, {int min = 0, int max = 9}) {
   if (max < min) max = min;
   var s = Set<int>.of(digitSet.digits)..retainWhere((d) => d >= min && d <= max);
   if (s.isEmpty) return -1;
@@ -510,18 +526,18 @@ int drawDigit(DigitSet digitSet, {int min = 0, int max = 9}) {
 /// Draws a two digit number from two sets of digits
 /// The first digit is drawn from the first set, the second digit is drawn from the second set
 /// Allows specification of a minimum and maximum value. If the constraints cannot be met, -1 is returned
-int drawTwoDigitNumber(DigitSet firstDigits, DigitSet secondDigits, {int min = 0, int max = 99}) {
-  final int min_first = min ~/ 10;
-  final int max_first = max ~/ 10;
-  final int min_second = min % 10;
-  final int max_second = max % 10;
-  final int first = drawDigit(firstDigits, min: min_first, max: max_first);
+int drawTwoDigitNumber(DigitSpec firstDigits, DigitSpec secondDigits, {int min = 0, int max = 99}) {
+  final int minFirst = min ~/ 10;
+  final int maxFirst = max ~/ 10;
+  final int minSecond = min % 10;
+  final int maxSecond = max % 10;
+  final int first = drawDigit(firstDigits, min: minFirst, max: maxFirst);
   if (first == -1) return -1;
 
   final int second = drawDigit(
     secondDigits,
-    min: first == min_first ? min_second : 0,
-    max: first == max_first ? max_second : 9,
+    min: first == minFirst ? minSecond : 0,
+    max: first == maxFirst ? maxSecond : 9,
   );
   if (second == -1) return -1;
 
@@ -569,16 +585,18 @@ class Puzzle {
 }
 
 class PuzzleConfig {
-  final DigitSet msd1;
-  final DigitSet lsd1;
-  final DigitSet msd2;
-  final DigitSet lsd2;
+  DigitSpec msd1;
+  DigitSpec lsd1;
+  Operation operation;
+  DigitSpec msd2;
+  DigitSpec lsd2;
+  Relation relation;
 
-  PuzzleConfig(this.msd1, this.lsd1, this.msd2, this.lsd2);
+  PuzzleConfig(this.msd1, this.lsd1, this.operation, this.msd2, this.lsd2, this.relation);
 
   @override
   String toString() {
-    return "[${msd1.label}, ${lsd1.label}] [${msd2.label}, ${lsd2.label}]";
+    return "[${msd1.label}, ${lsd1.label}] ${operation.opChar} [${msd2.label}, ${lsd2.label}] ${relation.relChar} ???";
   }
 }
 
@@ -589,12 +607,12 @@ Puzzle generatePuzzle(PuzzleConfig pc) {
   var rel = Relation.eq;
   int first = 0, second = 0, third = 0;
 
-  if (r.nextDouble() < 1.0) {
+  if (pc.operation == Operation.add) {
     // addition
     rel = Relation.eq;
     op = Operation.add;
-    for (int i = 0; i < 10; ++i) {
-      // try at least 10 times if the constraints cannot be met (digit set vs max/min)
+    for (int i = 0; i < 30; ++i) {
+      // try at least 30 times if the constraints cannot be met (digit set vs max/min)
       first = drawTwoDigitNumber(pc.msd1, pc.lsd1);
       if (first == -1) continue;
 
@@ -603,13 +621,17 @@ Puzzle generatePuzzle(PuzzleConfig pc) {
 
       break;
     }
+    // if a constraints cannot be met, use 0 which always works
+    if (first == -1) first = 0;
+    if (second == -1) second = 0;
+
     third = first + second;
-  } else {
+  } else if (pc.operation == Operation.sub) {
     // subtraction
     rel = Relation.eq;
     op = Operation.sub;
-    for (int i = 0; i < 10; ++i) {
-      // try at least 10 times if the constraints cannot be met (digit set vs max/min)
+    for (int i = 0; i < 30; ++i) {
+      // try at least 30 times if the constraints cannot be met (digit set vs max/min)
       first = drawTwoDigitNumber(pc.msd1, pc.lsd1);
       if (first == -1) continue;
 
@@ -618,6 +640,10 @@ Puzzle generatePuzzle(PuzzleConfig pc) {
 
       break;
     }
+    // if a constraints cannot be met, use 0 which always works
+    if (first == -1) first = 0;
+    if (second == -1) second = 0;
+
     third = first - second;
   }
 
@@ -625,20 +651,26 @@ Puzzle generatePuzzle(PuzzleConfig pc) {
 }
 
 int calculateReward(Puzzle puzzle) {
-  int reward = 1;
-  if (puzzle.first >= 10) reward++;
+  if (puzzle.first == 0 || puzzle.second == 0) return 1;
+
+  int reward = 0;
   if (puzzle.first >= 20) reward++;
-  if (puzzle.first % 10 != 0 && puzzle.first >= 10) reward++;
-  if (puzzle.second >= 10) reward++;
+  if (puzzle.first >= 50) reward++;
+  if (puzzle.first % 10 != 0 && puzzle.first >= 10) reward += 2;
   if (puzzle.second >= 20) reward++;
-  if (puzzle.second % 10 != 0 && puzzle.second >= 10) reward++;
+  if (puzzle.second >= 50) reward++;
+  if (puzzle.second % 10 != 0 && puzzle.second >= 10) reward += 2;
+  if (puzzle.third % 10 != 0) reward += 2;
   switch (puzzle.operation) {
     case Operation.add:
-      if (puzzle.first % 10 + puzzle.second % 10 >= 10) reward += 5; // more rewards for carrying over
+      if (puzzle.first % 10 + puzzle.second % 10 >= 10) reward += 7; // more rewards for carrying over
       break;
     case Operation.sub:
-      if (puzzle.first % 10 - puzzle.second % 10 < 0) reward += 5; // more rewards for carrying over
+      if (puzzle.first % 10 - puzzle.second % 10 < 0) reward += 7; // more rewards for carrying over
       break;
   }
   return reward;
 }
+
+/// Settings screen ============================================================
+///

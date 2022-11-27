@@ -10,7 +10,7 @@ import 'package:mathmine/main.dart';
 
 void main() {
   test("random single digit with min, max and constraints", () {
-    for (DigitSet ds in DigitSet.values) {
+    for (DigitSpec ds in DigitSpec.values) {
       for (int max = 0; max < 10; max++) {
         for (int min = 0; min <= max; min++) {
           int result = drawDigit(ds, min: min, max: max);
@@ -25,8 +25,8 @@ void main() {
   });
 
   test("random double digit numbers with min, max and constrains", () {
-    for (DigitSet ds1 in DigitSet.values) {
-      for (DigitSet ds2 in DigitSet.values) {
+    for (DigitSpec ds1 in DigitSpec.values) {
+      for (DigitSpec ds2 in DigitSpec.values) {
         for (int max = 0; max < 100; max += 1) {
           for (int min = 0; min <= max; min += 1) {
             int result = drawTwoDigitNumber(ds1, ds2, min: min, max: max);
@@ -45,10 +45,12 @@ void main() {
   test("generate possible puzzles with random rules", () {
     for (int i = 0; i < 100; i++) {
       PuzzleConfig pc = PuzzleConfig(
-        DigitSet.values[r.nextInt(DigitSet.values.length)],
-        DigitSet.values[r.nextInt(DigitSet.values.length)],
-        DigitSet.values[r.nextInt(DigitSet.values.length)],
-        DigitSet.values[r.nextInt(DigitSet.values.length)],
+        DigitSpec.values[r.nextInt(DigitSpec.values.length)],
+        DigitSpec.values[r.nextInt(DigitSpec.values.length)],
+        Operation.values[r.nextInt(Operation.values.length)],
+        DigitSpec.values[r.nextInt(DigitSpec.values.length)],
+        DigitSpec.values[r.nextInt(DigitSpec.values.length)],
+        Relation.eq,
       );
       Puzzle puzzle = generatePuzzle(pc);
       print("Config: $pc  Puzzle: $puzzle");
