@@ -6,7 +6,7 @@ const RESOURCES = {
   "CNAME": "3c712281e92700003dedd5f2bd8a683c",
 "assets/AssetManifest.json": "b5f4b89486f9c77e4b9bc8c7afcbb8ae",
 "assets/FontManifest.json": "7b2a36307916a9721811788013e65289",
-"assets/NOTICES": "284cdd1a0308d2dd652b9170eef9048d",
+"assets/NOTICES": "4d8c2dfab43a2605dc0decf00d8331ba",
 "assets/assets/image/happy.webp": "a13f51003cb56582d212e599df754059",
 "assets/assets/image/minecoin.webp": "21ddfde9ad49c3099af9be108cb47041",
 "assets/assets/image/sad.webp": "0ffdd6f655718833c208883e6f879cd6",
@@ -24,9 +24,9 @@ const RESOURCES = {
 "icons/Icon-512.png": "8da03e5da56b316281ac40cda3f7b675",
 "icons/Icon-maskable-192.png": "d27f93ba3bf7dcf43c471c2d6ed9d846",
 "icons/Icon-maskable-512.png": "8da03e5da56b316281ac40cda3f7b675",
-"index.html": "2f65842ebabb15fdb8aa2f69de9421bd",
-"/": "2f65842ebabb15fdb8aa2f69de9421bd",
-"main.dart.js": "e826d7cd8c205432745333454db66df4",
+"index.html": "e7eb6a19aa51f51bda60e8d6b7f07e2c",
+"/": "e7eb6a19aa51f51bda60e8d6b7f07e2c",
+"main.dart.js": "2fd35a0018798673491d3a435a3ee3db",
 "manifest.json": "84e3e14f545f0b6d5c5e735e8d3b001d",
 "version.json": "a041e3e83cac97c207d155ee226f6efc"
 };
