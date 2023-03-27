@@ -15,6 +15,7 @@ void main() {
 }
 
 final mineCoinImage = Image.asset('assets/image/minecoin.webp');
+final robuxImage = Image.asset('assets/image/robux.webp');
 final happyImage = Image.asset('assets/image/happy.webp');
 final sadImage = Image.asset('assets/image/sad.webp');
 const kDefaultTextStyle = TextStyle(fontWeight: FontWeight.normal, fontFamily: 'Roboto', decoration: TextDecoration.none);
@@ -546,7 +547,9 @@ int drawTwoDigitNumber(DigitSpec firstDigits, DigitSpec secondDigits, {int min =
 
 enum Operation {
   add("+"),
-  sub("-");
+  sub("-"),
+  mul("×"),
+  div("÷");
 
   final String opChar;
   const Operation(this.opChar);
@@ -645,6 +648,20 @@ Puzzle generatePuzzle(PuzzleConfig pc) {
     if (second == -1) second = 0;
 
     third = first - second;
+  } else if (pc.operation == Operation.mul) {
+    // multiplication
+    rel = Relation.eq;
+    op = Operation.mul;
+    first = drawDigit(pc.lsd1);
+    second = drawDigit(pc.lsd2);
+    third = first * second;
+  } else if (pc.operation == Operation.div) {
+    // division
+    rel = Relation.eq;
+    op = Operation.div;
+    third = drawDigit(DigitSpec.non_0);
+    second = drawDigit(DigitSpec.non_0);
+    first = second * third;
   }
 
   return Puzzle(first, op, second, rel, third);
@@ -656,17 +673,37 @@ int calculateReward(Puzzle puzzle) {
   int reward = 0;
   if (puzzle.first >= 20) reward++;
   if (puzzle.first >= 50) reward++;
-  if (puzzle.first % 10 != 0 && puzzle.first >= 10) reward += 2;
   if (puzzle.second >= 20) reward++;
   if (puzzle.second >= 50) reward++;
-  if (puzzle.second % 10 != 0 && puzzle.second >= 10) reward += 2;
-  if (puzzle.third % 10 != 0) reward += 2;
   switch (puzzle.operation) {
     case Operation.add:
+      if (puzzle.first % 10 != 0 && puzzle.first >= 10) reward += 2;
+      if (puzzle.second % 10 != 0 && puzzle.second >= 10) reward += 2;
+      if (puzzle.third % 10 != 0) reward += 2;
       if (puzzle.first % 10 + puzzle.second % 10 >= 10) reward += 7; // more rewards for carrying over
       break;
     case Operation.sub:
+      if (puzzle.first % 10 != 0 && puzzle.first >= 10) reward += 2;
+      if (puzzle.second % 10 != 0 && puzzle.second >= 10) reward += 2;
+      if (puzzle.third % 10 != 0) reward += 2;
       if (puzzle.first % 10 - puzzle.second % 10 < 0) reward += 7; // more rewards for carrying over
+      break;
+    case Operation.mul:
+      if (puzzle.first <= 1 || puzzle.second <= 1) return 3;
+      reward += 4;
+      if (puzzle.first > 4) reward += 3;
+      if (puzzle.first > 6) reward += 3;
+      if (puzzle.second > 4) reward += 3;
+      if (puzzle.second > 6) reward += 3;
+      break;
+    case Operation.div:
+      if (puzzle.second <= 1 || puzzle.third <= 1) return 3;
+      reward += 4;
+      if (puzzle.first >= 10) reward += 3;
+      if (puzzle.first >= 30) reward += 3;
+      if (puzzle.first >= 60) reward += 3;
+      if (puzzle.second > 4) reward += 3;
+      if (puzzle.second > 6) reward += 3;
       break;
   }
   return reward;
