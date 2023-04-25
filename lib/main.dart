@@ -53,7 +53,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
   int _reward = 1;
 
   final PuzzleConfig _puzzleConfig =
-      PuzzleConfig(DigitSpec.all, DigitSpec.all, Operation.add, DigitSpec.all, DigitSpec.all, Relation.eq);
+      PuzzleConfig(DigitSpec.digit_0, DigitSpec.all, Operation.mul, DigitSpec.digit_0, DigitSpec.all, Relation.eq, Currency.robux);
   Puzzle _puzzle = Puzzle(1, Operation.add, 1, Relation.eq, 2);
 
   @override
@@ -71,7 +71,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: CoinCounterWidget(coins: _coins, onLongPress: _cashOut),
+        title: CoinCounterWidget(coins: _coins, currency: _puzzleConfig.currency, onLongPress: _cashOut),
         actions: [
           IconButton(
               icon: const Icon(Icons.settings),
@@ -171,10 +171,10 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
   }
 
   _cashOut() {
-    if (_coins > 320) {
+    if (_coins > _puzzleConfig.currency.cashoutUnit) {
       Sound.success.play();
       setState(() {
-        _coins -= 320;
+        _coins -= _puzzleConfig.currency.cashoutUnit;
         SharedPreferences.getInstance().then((prefs) {
           prefs.setInt("coins", _coins);
         });
@@ -186,12 +186,13 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
 class CoinCounterWidget extends StatelessWidget {
   final VoidCallback onLongPress;
   final int coins;
-  const CoinCounterWidget({super.key, required this.coins, required this.onLongPress});
+  final Currency currency;
+  const CoinCounterWidget({super.key, required this.currency, required this.coins, required this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
     return Row(children: [
-      GestureDetector(onLongPress: onLongPress, child: SizedBox.square(dimension: 48, child: mineCoinImage)),
+      GestureDetector(onLongPress: onLongPress, child: SizedBox.square(dimension: 48, child: Image.asset(currency.imagePath))),
       Container(
         padding: const EdgeInsets.only(left: 10),
         child: Text('$coins', style: kDefaultTextStyle.copyWith(fontSize: 32)),
@@ -545,6 +546,18 @@ int drawTwoDigitNumber(DigitSpec firstDigits, DigitSpec secondDigits, {int min =
   return first * 10 + second;
 }
 
+enum Currency {
+  minecoin('assets/image/minecoin.webp', 320),
+  robux('assets/image/robux.webp', 400);
+
+  final String imagePath;
+  final int cashoutUnit;
+  const Currency(this.imagePath, this.cashoutUnit);
+
+  @override
+  String toString() => imagePath;
+}
+
 enum Operation {
   add("+"),
   sub("-"),
@@ -588,6 +601,7 @@ class Puzzle {
 }
 
 class PuzzleConfig {
+  Currency currency;
   DigitSpec msd1;
   DigitSpec lsd1;
   Operation operation;
@@ -595,11 +609,11 @@ class PuzzleConfig {
   DigitSpec lsd2;
   Relation relation;
 
-  PuzzleConfig(this.msd1, this.lsd1, this.operation, this.msd2, this.lsd2, this.relation);
+  PuzzleConfig(this.msd1, this.lsd1, this.operation, this.msd2, this.lsd2, this.relation, this.currency);
 
   @override
   String toString() {
-    return "[${msd1.label}, ${lsd1.label}] ${operation.opChar} [${msd2.label}, ${lsd2.label}] ${relation.relChar} ???";
+    return "${currency.name} [${msd1.label}, ${lsd1.label}] ${operation.opChar} [${msd2.label}, ${lsd2.label}] ${relation.relChar} ???";
   }
 }
 
@@ -689,21 +703,27 @@ int calculateReward(Puzzle puzzle) {
       if (puzzle.first % 10 - puzzle.second % 10 < 0) reward += 7; // more rewards for carrying over
       break;
     case Operation.mul:
-      if (puzzle.first <= 1 || puzzle.second <= 1) return 3;
-      reward += 4;
-      if (puzzle.first > 4) reward += 3;
-      if (puzzle.first > 6) reward += 3;
-      if (puzzle.second > 4) reward += 3;
-      if (puzzle.second > 6) reward += 3;
+      if (puzzle.first <= 1 || puzzle.second <= 1) return 1;
+      reward += 2;
+
+      if ({5}.contains(puzzle.first)) reward += 1;
+      if ({9}.contains(puzzle.first)) reward += 2;
+      if ({3, 4, 6}.contains(puzzle.first)) reward += 3;
+      if ({7, 8}.contains(puzzle.first)) reward += 5;
+
+      if ({5}.contains(puzzle.second)) reward += 1;
+      if ({9}.contains(puzzle.second)) reward += 2;
+      if ({3, 4, 6}.contains(puzzle.second)) reward += 3;
+      if ({7, 8}.contains(puzzle.second)) reward += 5;
       break;
     case Operation.div:
-      if (puzzle.second <= 1 || puzzle.third <= 1) return 3;
-      reward += 4;
-      if (puzzle.first >= 10) reward += 3;
-      if (puzzle.first >= 30) reward += 3;
-      if (puzzle.first >= 60) reward += 3;
-      if (puzzle.second > 4) reward += 3;
-      if (puzzle.second > 6) reward += 3;
+      if (puzzle.second <= 1 || puzzle.third <= 1) return 1;
+      reward += 3;
+      if (puzzle.first >= 10) reward += 2;
+      if (puzzle.first >= 30) reward += 2;
+      if (puzzle.first >= 60) reward += 2;
+      if (puzzle.second > 4) reward += 2;
+      if (puzzle.second > 6) reward += 2;
       break;
   }
   return reward;

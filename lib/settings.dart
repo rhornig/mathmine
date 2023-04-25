@@ -16,6 +16,18 @@ class SettingsWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            DropdownButtonFormField<Currency>(
+              decoration: const InputDecoration(labelText: "Currency"),
+              elevation: 8,
+              isExpanded: true,
+              borderRadius: BorderRadius.circular(8),
+              focusColor: Colors.grey.withAlpha(0),
+              items: Currency.values.map((e) => DropdownMenuItem<Currency>(value: e, child: Text(e.name))).toList(),
+              value: puzzleConfig.currency,
+              onChanged: (Currency? newValue) {
+                puzzleConfig.currency = newValue!;
+              },
+            ),
             DropdownButtonFormField<DigitSpec>(
               decoration: const InputDecoration(labelText: "MSD1"),
               elevation: 8,
