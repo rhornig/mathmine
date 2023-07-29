@@ -73,13 +73,14 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
       appBar: AppBar(
         title: CoinCounterWidget(coins: _coins, currency: _puzzleConfig.currency, onLongPress: _cashOut),
         actions: [
-          IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                setState(() {
-                  showSettings = !showSettings;
-                });
-              })
+          GestureDetector(
+            child: const Icon(Icons.horizontal_rule),
+            onLongPress: () {
+              setState(() {
+                showSettings = !showSettings;
+              });
+            },
+          )
         ],
       ),
       body: showSettings
