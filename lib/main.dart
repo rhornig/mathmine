@@ -271,7 +271,7 @@ class Block extends StatelessWidget {
                                 : relation != null
                                     ? relation!.relChar
                                     : "",
-                        style: kDefaultTextStyle.copyWith(color: foregroundColor, fontSize: size * 0.75),
+                        style: kDefaultTextStyle.copyWith(color: foregroundColor, fontSize: size * 0.65),
                       )),
       ),
     );
