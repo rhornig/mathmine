@@ -704,21 +704,21 @@ int calculateReward(Puzzle puzzle) {
       break;
     case Operation.mul:
       if (puzzle.first <= 1 || puzzle.second <= 1) return 1;
-      reward += 2;
+      reward += 1;
 
       if ({5}.contains(puzzle.first)) reward += 1;
       if ({9}.contains(puzzle.first)) reward += 2;
       if ({3, 4, 6}.contains(puzzle.first)) reward += 3;
-      if ({7, 8}.contains(puzzle.first)) reward += 5;
+      if ({7, 8}.contains(puzzle.first)) reward += 4;
 
       if ({5}.contains(puzzle.second)) reward += 1;
       if ({9}.contains(puzzle.second)) reward += 2;
       if ({3, 4, 6}.contains(puzzle.second)) reward += 3;
-      if ({7, 8}.contains(puzzle.second)) reward += 5;
+      if ({7, 8}.contains(puzzle.second)) reward += 4;
       break;
     case Operation.div:
       if (puzzle.second <= 1 || puzzle.third <= 1) return 1;
-      reward += 3;
+      reward += 1;
       if (puzzle.first >= 10) reward += 2;
       if (puzzle.first >= 30) reward += 2;
       if (puzzle.first >= 60) reward += 2;
