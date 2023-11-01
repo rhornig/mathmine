@@ -506,6 +506,7 @@ enum DigitSpec {
   digit_9({9}, "9"),
 
   non_0({1, 2, 3, 4, 5, 6, 7, 8, 9}, "nem nulla"),
+  mt_2({2, 3, 4, 5, 6, 7, 8, 9}, ">= 2"),
   div_by_5({0, 5}, "osztható 5-el"),
   lt_5({0, 1, 2, 3, 4}, "< 5"),
   mt_5({5, 6, 7, 8, 9}, ">= 5"),
@@ -565,8 +566,8 @@ enum Currency {
 enum Operation {
   add("+"),
   sub("-"),
-  mul("×"),
-  div("÷");
+  mul("⋅"), // ×
+  div(":"); // ÷
 
   final String opChar;
   const Operation(this.opChar);
@@ -677,8 +678,8 @@ Puzzle generatePuzzle(PuzzleConfig pc) {
     // division
     rel = Relation.eq;
     op = Operation.div;
-    third = drawDigit(DigitSpec.non_0);
-    second = drawDigit(DigitSpec.non_0);
+    third = drawDigit(DigitSpec.mt_2);
+    second = drawDigit(DigitSpec.mt_2);
     first = second * third;
   }
 
