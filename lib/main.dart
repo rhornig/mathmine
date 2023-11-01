@@ -176,7 +176,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
 
   _cashOut() {
     if (_coins >= _puzzleConfig.currency.cashoutUnit) {
-      Sound.success.play();
+      Sound.complete.play();
       setState(() {
         _coins -= _puzzleConfig.currency.cashoutUnit;
         SharedPreferences.getInstance().then((prefs) {
@@ -473,7 +473,8 @@ final _soundToId = <Sound, int>{};
 
 enum Sound {
   success("success.mp3"),
-  failure("failure.mp3");
+  failure("failure.mp3"),
+  complete("complete.mp3");
 
   final String filename;
   const Sound(this.filename);
