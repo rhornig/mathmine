@@ -172,7 +172,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
   }
 
   _cashOut() {
-    if (_coins > _puzzleConfig.currency.cashoutUnit) {
+    if (_coins >= _puzzleConfig.currency.cashoutUnit) {
       Sound.success.play();
       setState(() {
         _coins -= _puzzleConfig.currency.cashoutUnit;
@@ -549,7 +549,7 @@ int drawTwoDigitNumber(DigitSpec firstDigits, DigitSpec secondDigits, {int min =
 
 enum Currency {
   minecoin('assets/image/minecoin.webp', 320),
-  robux('assets/image/robux.webp', 400);
+  robux('assets/image/robux.webp', 800);
 
   final String imagePath;
   final int cashoutUnit;
