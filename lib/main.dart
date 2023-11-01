@@ -74,7 +74,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
         title: CoinCounterWidget(coins: _coins, currency: _puzzleConfig.currency, onLongPress: _cashOut),
         actions: [
           GestureDetector(
-            child: const Icon(Icons.horizontal_rule),
+            child: const Icon(Icons.settings, color: Color.fromRGBO(255, 255, 255, 0.0)),
             onLongPress: () {
               setState(() {
                 showSettings = !showSettings;
