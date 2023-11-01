@@ -163,10 +163,13 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
     Sound.failure.play();
     setState(() {
       showFailure = true;
+      _coins -= max((_reward / 4).ceil(), 1);
     });
     Timer(const Duration(seconds: 2), () {
       setState(() {
-        _showNewPuzzle();
+        showFailure = false;
+        showSuccess = false;
+        //_showNewPuzzle();
       });
     });
   }
