@@ -53,7 +53,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
   int _reward = 1;
 
   final PuzzleConfig _puzzleConfig =
-      PuzzleConfig(DigitSpec.digit_0, DigitSpec.all, Operation.mul, DigitSpec.digit_0, DigitSpec.all, Relation.eq, Currency.robux);
+      PuzzleConfig(DigitSpec.digit_0, DigitSpec.mt_2, Operation.mul, DigitSpec.digit_0, DigitSpec.mt_5, Relation.eq, Currency.robux);
   Puzzle _puzzle = Puzzle(1, Operation.add, 1, Relation.eq, 2);
 
   @override
