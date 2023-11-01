@@ -164,6 +164,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
     setState(() {
       showFailure = true;
       _coins -= max((_reward / 4).ceil(), 1);
+      if (_coins < 0) _coins = 0;
     });
     Timer(const Duration(seconds: 2), () {
       setState(() {
