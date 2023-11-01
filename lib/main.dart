@@ -126,7 +126,7 @@ class _MathMinerWidgetState extends State<MathMinerWidget> {
               ? Block(number: _puzzle.third)
               : showFailure
                   ? const Block(showFailure: true)
-                  : SolutionBlockWidget(_puzzle.third, reward: _reward, onSuccess: _success, onFailure: _failure),
+                  : SolutionBlockWidget(_puzzle.third, reward: _reward, onSuccess: _success, onFailure: _failure, currency: _puzzleConfig.currency,),
         ],
       ),
     );
@@ -228,6 +228,7 @@ class Block extends StatelessWidget {
   final bool hidden;
   final bool showFailure;
   final bool showSuccess;
+  final Currency currency;
   const Block({
     super.key,
     this.size = 70,
@@ -235,6 +236,7 @@ class Block extends StatelessWidget {
     this.operation,
     this.relation,
     this.hidden = false,
+    this.currency = Currency.minecoin,
     this.reward,
     this.showFailure = false,
     this.showSuccess = false,
@@ -265,7 +267,7 @@ class Block extends StatelessWidget {
                           alignment: WrapAlignment.center,
                           runSpacing: 1,
                           runAlignment: WrapAlignment.spaceEvenly,
-                          children: List.filled(reward!, SizedBox.square(dimension: 14, child: mineCoinImage)),
+                          children: List.filled(reward!, SizedBox.square(dimension: 14, child: Image.asset(currency.imagePath))),
                         ))
                     : Text(
                         // content display (number or operation or relation)
@@ -288,11 +290,14 @@ class Block extends StatelessWidget {
 class SolutionBlockWidget extends StatelessWidget {
   final int solution;
   final int reward;
+  final Currency currency;
   final VoidCallback onSuccess;
   final VoidCallback onFailure;
+
   const SolutionBlockWidget(
     this.solution, {
     required this.reward,
+    required this.currency,
     required this.onSuccess,
     required this.onFailure,
     super.key,
@@ -302,7 +307,7 @@ class SolutionBlockWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return DragTarget<int>(
       builder: (BuildContext context, List<dynamic> accepted, List<dynamic> rejected) {
-        return Block(reward: reward);
+        return Block(reward: reward, currency: currency,);
       },
       onAccept: (int data) {
         if (data == solution) {
